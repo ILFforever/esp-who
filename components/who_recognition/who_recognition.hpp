@@ -37,9 +37,23 @@ public:
     detect::WhoDetect *get_detect_task();
     WhoRecognitionCore *get_recognition_task();
 
+    // Power management methods
+    void shutdown();  // Stop tasks without deleting objects
+    bool restart();   // Restart stopped tasks
+    void mark_running();  // Mark tasks as running (call after initial run())
+
 private:
     detect::WhoDetect *m_detect;
     WhoRecognitionCore *m_recognition;
+
+    // Store run parameters for restart
+    configSTACK_DEPTH_TYPE m_detect_stack = 3584;
+    UBaseType_t m_detect_priority = 2;
+    BaseType_t m_detect_core = 1;
+    configSTACK_DEPTH_TYPE m_recognition_stack = 3584;
+    UBaseType_t m_recognition_priority = 2;
+    BaseType_t m_recognition_core = 1;
+    bool m_is_running = false;
 };
 } // namespace recognition
 } // namespace who

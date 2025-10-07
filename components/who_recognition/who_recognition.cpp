@@ -150,5 +150,43 @@ WhoRecognitionCore *WhoRecognition::get_recognition_task()
 {
     return m_recognition;
 }
+
+void WhoRecognition::shutdown()
+{
+    if (!m_is_running) {
+        return;  // Already shut down
+    }
+
+    // Stop all tasks (they self-delete FreeRTOS tasks but C++ objects remain)
+    WhoTaskGroup::stop();
+
+    m_is_running = false;
+}
+
+bool WhoRecognition::restart()
+{
+    if (m_is_running) {
+        return true;  // Already running
+    }
+
+    // Restart detection task
+    if (!m_detect->run(m_detect_stack, m_detect_priority, m_detect_core)) {
+        return false;
+    }
+
+    // Restart recognition task
+    if (!m_recognition->run(m_recognition_stack, m_recognition_priority, m_recognition_core)) {
+        m_detect->stop();  // Rollback
+        return false;
+    }
+
+    m_is_running = true;
+    return true;
+}
+
+void WhoRecognition::mark_running()
+{
+    m_is_running = true;
+}
 } // namespace recognition
 } // namespace who

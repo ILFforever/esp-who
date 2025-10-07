@@ -28,7 +28,6 @@ void WhoTaskState::task()
                 continue;
             }
         }
-        print_task_status();
     }
     xEventGroupSetBits(m_event_group, TASK_STOPPED);
     vTaskDelete(NULL);
@@ -52,33 +51,5 @@ bool WhoTaskState::pause_async()
     return false;
 }
 
-void WhoTaskState::print_task_status()
-{
-    configRUN_TIME_COUNTER_TYPE total_run_time;
-    UBaseType_t num_tasks = uxTaskGetNumberOfTasks();
-    TaskStatus_t *task_status_array =
-        (TaskStatus_t *)heap_caps_malloc(num_tasks * sizeof(TaskStatus_t), MALLOC_CAP_DEFAULT);
-    uxTaskGetSystemState(task_status_array, num_tasks, &total_run_time);
-
-    printf("\nTask Name       |  coreid  |   State   | Priority |  Stack HWM  |   Run Time  | Run Time Per |\n");
-    printf("----------------------------------------------------------------------------------------------\n");
-
-    for (UBaseType_t i = 0; i < num_tasks; i++) {
-#if CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U32
-        printf("%-15s | %-8x | %-9s | %-8u | %-11lu | %-11lu | %-12lu |\n",
-#else
-        printf("%-15s | %-8x | %-9s | %-8u | %-11lu | %-11llu | %-12llu |\n",
-#endif
-               task_status_array[i].pcTaskName,
-               task_status_array[i].xCoreID,
-               m_task_state[task_status_array[i].eCurrentState].c_str(),
-               task_status_array[i].uxCurrentPriority,
-               task_status_array[i].usStackHighWaterMark,
-               task_status_array[i].ulRunTimeCounter,
-               task_status_array[i].ulRunTimeCounter * 100 / total_run_time);
-    }
-    printf("\n");
-    heap_caps_free(task_status_array);
-}
 } // namespace task
 } // namespace who

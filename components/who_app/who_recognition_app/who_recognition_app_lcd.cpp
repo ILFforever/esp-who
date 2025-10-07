@@ -1,8 +1,12 @@
 #include "who_recognition_app_lcd.hpp"
 #include "human_face_detect.hpp"
-#include "who_lvgl_utils.hpp"
 #include "who_yield2idle.hpp"
+
+// Only include LVGL utilities if display is enabled
+#if CONFIG_BSP_DISPLAY_ENABLED || defined(CONFIG_LCD_ENABLE)
+#include "who_lvgl_utils.hpp"
 LV_FONT_DECLARE(montserrat_bold_26);
+#endif
 
 namespace who {
 namespace app {
@@ -24,11 +28,13 @@ WhoRecognitionAppLCD::WhoRecognitionAppLCD(frame_cap::WhoFrameCap *frame_cap) :
     m_recognition->set_recognizer(new HumanFaceRecognizer(db_path));
     m_recognition->set_detect_model(new HumanFaceDetect());
 
+#if CONFIG_BSP_DISPLAY_ENABLED || defined(CONFIG_LCD_ENABLE)
     bsp_display_lock(0);
     m_label = create_lvgl_label("", &montserrat_bold_26);
     const lv_font_t *font = lv_obj_get_style_text_font(m_label, LV_PART_MAIN);
     lv_obj_align(m_label, LV_ALIGN_TOP_MID, 0, font->line_height);
     bsp_display_unlock();
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32S3
     int disp_n_frames = 60;
@@ -47,9 +53,13 @@ WhoRecognitionAppLCD::WhoRecognitionAppLCD(frame_cap::WhoFrameCap *frame_cap) :
     m_recognition_button =
         button::get_recognition_button(button::recognition_button_type_t::PHYSICAL, recognition_task);
 #endif
+
+#if CONFIG_BSP_DISPLAY_ENABLED || defined(CONFIG_LCD_ENABLE)
     m_text_result_lcd_disp = new lcd_disp::WhoTextResultLCDDisp(recognition_task, m_label, disp_n_frames);
     m_detect_result_lcd_disp =
         new lcd_disp::WhoDetectResultLCDDisp(detect_task, m_lcd_disp->get_canvas(), {{255, 0, 0}});
+#endif
+
     recognition_task->set_recognition_result_cb(
         std::bind(&WhoRecognitionAppLCD::recognition_result_cb, this, std::placeholders::_1));
     recognition_task->set_detect_result_cb(
@@ -62,11 +72,13 @@ WhoRecognitionAppLCD::WhoRecognitionAppLCD(frame_cap::WhoFrameCap *frame_cap) :
 WhoRecognitionAppLCD::~WhoRecognitionAppLCD()
 {
     delete m_recognition_button;
+#if CONFIG_BSP_DISPLAY_ENABLED || defined(CONFIG_LCD_ENABLE)
     delete m_text_result_lcd_disp;
     delete m_detect_result_lcd_disp;
     bsp_display_lock(0);
     lv_obj_del(m_label);
     bsp_display_unlock();
+#endif
 }
 
 bool WhoRecognitionAppLCD::run()
@@ -83,28 +95,38 @@ bool WhoRecognitionAppLCD::run()
 
 void WhoRecognitionAppLCD::recognition_result_cb(const std::string &result)
 {
+#if CONFIG_BSP_DISPLAY_ENABLED || defined(CONFIG_LCD_ENABLE)
     m_text_result_lcd_disp->save_text_result(result);
+#endif
 }
 
 void WhoRecognitionAppLCD::detect_result_cb(const detect::WhoDetect::result_t &result)
 {
+#if CONFIG_BSP_DISPLAY_ENABLED || defined(CONFIG_LCD_ENABLE)
     m_detect_result_lcd_disp->save_detect_result(result);
+#endif
 }
 
 void WhoRecognitionAppLCD::lcd_disp_cb(who::cam::cam_fb_t *fb)
 {
+#if CONFIG_BSP_DISPLAY_ENABLED || defined(CONFIG_LCD_ENABLE)
     m_detect_result_lcd_disp->lcd_disp_cb(fb);
     m_text_result_lcd_disp->lcd_disp_cb(fb);
+#endif
 }
 
 void app::WhoRecognitionAppLCD::recognition_cleanup()
 {
+#if CONFIG_BSP_DISPLAY_ENABLED || defined(CONFIG_LCD_ENABLE)
     m_text_result_lcd_disp->cleanup();
+#endif
 }
 
 void app::WhoRecognitionAppLCD::detect_cleanup()
 {
+#if CONFIG_BSP_DISPLAY_ENABLED || defined(CONFIG_LCD_ENABLE)
     m_detect_result_lcd_disp->cleanup();
+#endif
 }
 } // namespace app
 } // namespace who

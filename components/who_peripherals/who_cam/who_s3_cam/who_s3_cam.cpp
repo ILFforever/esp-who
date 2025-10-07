@@ -4,6 +4,42 @@
 
 static const char *TAG = "WhoS3Cam";
 
+// XIAO ESP32-S3 Sense Camera Configuration
+camera_config_t xiao_camera_config = {
+    .pin_pwdn = -1,
+    .pin_reset = -1,
+    .pin_xclk = 10,
+    .pin_sccb_sda = 40,
+    .pin_sccb_scl = 39,
+    
+    .pin_d7 = 48,
+    .pin_d6 = 11,
+    .pin_d5 = 12,
+    .pin_d4 = 14,
+    .pin_d3 = 16,
+    .pin_d2 = 18,
+    .pin_d1 = 17,
+    .pin_d0 = 15,
+    .pin_vsync = 38,
+    .pin_href = 47,
+    .pin_pclk = 13,
+
+    .xclk_freq_hz = 16000000,
+    .ledc_timer = LEDC_TIMER_0,
+    .ledc_channel = LEDC_CHANNEL_0,
+
+    .pixel_format = PIXFORMAT_RGB565,
+    .frame_size = FRAMESIZE_QVGA,
+    //.frame_size = FRAMESIZE_QVGA, // Use 160x120 instead of QVGA (320x240) if camera keeps missing
+
+
+    .jpeg_quality = 12,
+    .fb_count = 2,
+    .fb_location = CAMERA_FB_IN_PSRAM,
+    .grab_mode = CAMERA_GRAB_WHEN_EMPTY,
+    .sccb_i2c_port = -1
+};
+
 namespace who {
 namespace cam {
 
@@ -14,16 +50,32 @@ WhoS3Cam::WhoS3Cam(const pixformat_t pixel_format,
                    bool horizontal_flip) :
     WhoCam(fb_count, resolution[frame_size].width, resolution[frame_size].height), m_format(pixel_format)
 {
-    ESP_ERROR_CHECK(bsp_i2c_init());
-    camera_config_t camera_config = BSP_CAMERA_DEFAULT_CONFIG;
+    // Configure camera with XIAO pins
+    // Let camera driver handle I2C initialization
+    ESP_LOGI(TAG, "Initializing XIAO ESP32-S3 camera...");
+    camera_config_t camera_config = xiao_camera_config;
     camera_config.pixel_format = pixel_format;
     camera_config.frame_size = frame_size;
     camera_config.fb_count = fb_count;
     camera_config.grab_mode = CAMERA_GRAB_LATEST;
+    camera_config.sccb_i2c_port = -1;  // Let driver manage I2C
+    
     if (pixel_format == PIXFORMAT_JPEG) {
         camera_config.xclk_freq_hz = 20000000;
     }
-    ESP_ERROR_CHECK(esp_camera_init(&camera_config));
+    
+    ESP_LOGI(TAG, "Frame size: %dx%d, Format: %d", 
+             resolution[frame_size].width, 
+             resolution[frame_size].height, 
+             pixel_format);
+    
+    esp_err_t err = esp_camera_init(&camera_config);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Camera init failed with error 0x%x", err);
+        ESP_ERROR_CHECK(err);
+    }
+    
+    ESP_LOGI(TAG, "Camera initialized successfully!");
     ESP_ERROR_CHECK(set_flip(!vertical_flip, !horizontal_flip));
 }
 
@@ -35,6 +87,10 @@ WhoS3Cam::~WhoS3Cam()
 cam_fb_t *WhoS3Cam::cam_fb_get()
 {
     camera_fb_t *fb = esp_camera_fb_get();
+    if (!fb) {
+        // Camera returned NULL frame (timeout or not ready)
+        return nullptr;
+    }
     int i = get_cam_fb_index();
     m_cam_fbs[i] = cam_fb_t(*fb);
     return &m_cam_fbs[i];

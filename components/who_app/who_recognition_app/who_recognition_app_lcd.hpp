@@ -22,9 +22,11 @@ protected:
 private:
     lcd_disp::WhoFrameLCDDisp *m_lcd_disp;
     button::WhoRecognitionButton *m_recognition_button;
+#if CONFIG_BSP_DISPLAY_ENABLED || defined(CONFIG_LCD_ENABLE)
     lcd_disp::WhoTextResultLCDDisp *m_text_result_lcd_disp;
     lcd_disp::WhoDetectResultLCDDisp *m_detect_result_lcd_disp;
     lv_obj_t *m_label;
+#endif
 };
 } // namespace app
 } // namespace who

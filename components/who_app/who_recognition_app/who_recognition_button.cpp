@@ -1,6 +1,10 @@
 #include "who_recognition_button.hpp"
+
+// Only include LVGL utilities if display is enabled
+#if CONFIG_BSP_DISPLAY_ENABLED || defined(CONFIG_LCD_ENABLE)
 #include "who_lvgl_utils.hpp"
 LV_FONT_DECLARE(montserrat_bold_26);
+#endif
 
 namespace who {
 namespace button {
@@ -64,6 +68,8 @@ void WhoRecognitionButtonPhysical::btn_event_handler(void *button_handle, void *
 }
 #endif
 
+// Only compile LVGL button class if display is enabled
+#if CONFIG_BSP_DISPLAY_ENABLED || defined(CONFIG_LCD_ENABLE)
 WhoRecognitionButtonLVGL::WhoRecognitionButtonLVGL(recognition::WhoRecognitionCore *recognition) :
     WhoRecognitionButton(recognition)
 {
@@ -107,6 +113,7 @@ void WhoRecognitionButtonLVGL::btn_event_handler(lv_event_t *e)
         xEventGroupSetBits(user_data->task->get_event_group(), user_data->event);
     }
 }
+#endif
 
 WhoRecognitionButton *get_recognition_button(recognition_button_type_t btn_type,
                                              recognition::WhoRecognitionCore *recognition)
@@ -120,7 +127,12 @@ WhoRecognitionButton *get_recognition_button(recognition_button_type_t btn_type,
         return nullptr;
 #endif
     case recognition_button_type_t::LVGL:
+#if CONFIG_BSP_DISPLAY_ENABLED || defined(CONFIG_LCD_ENABLE)
         return new WhoRecognitionButtonLVGL(recognition);
+#else
+        ESP_LOGE("RecognitionButton", "LVGL button not supported - display not enabled.");
+        return nullptr;
+#endif
     default:
         ESP_LOGE("RecognitionButton", "Wrong recognition button type.");
         return nullptr;

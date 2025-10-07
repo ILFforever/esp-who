@@ -8,8 +8,10 @@ namespace app {
 class WhoRecognitionAppBase : public WhoApp {
 public:
     WhoRecognitionAppBase(frame_cap::WhoFrameCap *frame_cap);
+    virtual ~WhoRecognitionAppBase();
+    recognition::WhoRecognition* get_recognition() { return m_recognition; }
 
-protected:
+protected:  
     frame_cap::WhoFrameCap *m_frame_cap;
     recognition::WhoRecognition *m_recognition;
 };

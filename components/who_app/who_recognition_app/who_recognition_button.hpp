@@ -29,6 +29,10 @@ private:
 };
 #endif
 
+// Only define LVGL button class if BSP has display support
+#if CONFIG_BSP_DISPLAY_ENABLED || defined(CONFIG_LCD_ENABLE)
+#include "lvgl.h"
+
 class WhoRecognitionButtonLVGL : public WhoRecognitionButton {
 public:
     WhoRecognitionButtonLVGL(recognition::WhoRecognitionCore *recognition);
@@ -40,6 +44,7 @@ private:
     lv_obj_t *m_btn_enroll;
     lv_obj_t *m_btn_delete;
 };
+#endif
 
 enum class recognition_button_type_t {
     PHYSICAL,
