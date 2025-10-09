@@ -62,6 +62,15 @@ void WhoRecognitionCore::task()
         }
         if (event_bits & RECOGNIZE) {
             auto new_detect_result_cb = [this](const detect::WhoDetect::result_t &result) {
+                // Only recognize if face was actually detected
+                if (result.det_res.empty()) {
+                    if (m_detect_result_cb) {
+                        m_detect_result_cb(result);
+                    }
+                    // Keep waiting for face detection
+                    return;
+                }
+
                 auto ret = m_recognizer->recognize(result.img, result.det_res);
                 if (m_detect_result_cb) {
                     m_detect_result_cb(result);
@@ -73,6 +82,7 @@ void WhoRecognitionCore::task()
                         m_recognition_result_cb(std::format("id: {}, sim: {:.2f}", ret[0].id, ret[0].similarity));
                     }
                 }
+                // Reset callback after recognition
                 m_detect->set_detect_result_cb(m_detect_result_cb);
             };
             m_detect->set_detect_result_cb(new_detect_result_cb);
@@ -80,6 +90,15 @@ void WhoRecognitionCore::task()
         }
         if (event_bits & ENROLL) {
             auto new_detect_result_cb = [this](const detect::WhoDetect::result_t &result) {
+                // Only enroll if face was actually detected
+                if (result.det_res.empty()) {
+                    if (m_detect_result_cb) {
+                        m_detect_result_cb(result);
+                    }
+                    // Keep waiting for face detection
+                    return;
+                }
+
                 esp_err_t ret = m_recognizer->enroll(result.img, result.det_res);
                 if (m_detect_result_cb) {
                     m_detect_result_cb(result);
@@ -91,6 +110,7 @@ void WhoRecognitionCore::task()
                         m_recognition_result_cb(std::format("id: {} enrolled.", m_recognizer->get_num_feats()));
                     }
                 }
+                // Reset callback after successful enrollment or failure
                 m_detect->set_detect_result_cb(m_detect_result_cb);
             };
             m_detect->set_detect_result_cb(new_detect_result_cb);
