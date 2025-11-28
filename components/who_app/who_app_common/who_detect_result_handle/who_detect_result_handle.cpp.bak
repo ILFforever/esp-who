@@ -9,15 +9,19 @@ void draw_detect_results_on_img(const dl::image::img_t &img,
                                 const std::list<dl::detect::result_t> &detect_res,
                                 const std::vector<std::vector<uint8_t>> &palette)
 {
-    // Updated for new esp-dl API (v3.2.0) - removed caps parameter
+#if CONFIG_IDF_TARGET_ESP32P4
+    uint32_t caps = 0;
+#else
+    uint32_t caps = DL_IMAGE_CAP_RGB565_BIG_ENDIAN;
+#endif
     for (const auto &res : detect_res) {
         dl::image::draw_hollow_rectangle(
-            img, res.box[0], res.box[1], res.box[2], res.box[3], palette[res.category], 2);
+            img, res.box[0], res.box[1], res.box[2], res.box[3], palette[res.category], 2, caps);
         if (!res.keypoint.empty()) {
             assert(res.keypoint.size() == 10);
             for (int i = 0; i < 5; i++) {
                 dl::image::draw_point(
-                    img, res.keypoint[2 * i], res.keypoint[2 * i + 1], palette[res.category], 5);
+                    img, res.keypoint[2 * i], res.keypoint[2 * i + 1], palette[res.category], 5, caps);
             }
         }
     }

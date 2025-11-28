@@ -194,7 +194,7 @@ cam_fb_t *WhoDecodeNode::process(who::cam::cam_fb_t *fb)
 #if CONFIG_IDF_TARGET_ESP32P4
     uint32_t caps = 0;
 #else
-    uint32_t caps = DL_IMAGE_CAP_RGB565_BIG_ENDIAN;
+    uint32_t caps = dl::image::DL_IMAGE_CAP_RGB565_BIG_ENDIAN;
 #endif
 #if CONFIG_SOC_JPEG_CODEC_SUPPORTED
     auto img = hw_decode_jpeg({fb->buf, fb->len}, m_pix_type, caps);
